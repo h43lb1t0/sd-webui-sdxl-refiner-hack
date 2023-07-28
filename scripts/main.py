@@ -30,7 +30,10 @@ script_callbacks.on_ui_settings(on_ui_settings)
 
 class sdxlRefinderHack(scripts.Script):
 
-    info = None
+    def __init__(self):
+        self.info_base = None
+        self.info_hr = None
+        self.first_pass = True
 
     def title(self):
         return "SDXL Refinder Hack"
@@ -52,15 +55,23 @@ class sdxlRefinderHack(scripts.Script):
                 return [base_model, refinder_model, is_enabled]
     
     
-    def process_batch(self, p,*args, **kwargs):
+    def before_process_batch(self, p,*args, **kwargs):
+        print(f"\nEnabled: {args[2]}\n\ncheckpoint: {args[0]}")
         if args[2]:
-            self.info = modules.sd_models.get_closet_checkpoint_match(args[0])
-            modules.sd_models.reload_model_weights(shared.sd_model, self.info)
+            if self.first_pass:
+                self.first_pass = False
+            else:
+                modules.sd_models.unload_model_weights(shared.sd_model, self.info_hr)
+            self.info_base = modules.sd_models.get_closet_checkpoint_match(args[0])
+            modules.sd_models.reload_model_weights(shared.sd_model, self.info_base)
+            p.override_settings['sd_model_checkpoint'] = self.info_base.name
 
     def before_hr(self, p, *args, **kwargs):
         if args[2]:
-            modules.sd_models.unload_model_weights(shared.sd_model, self.info)
-            info = modules.sd_models.get_closet_checkpoint_match(args[1])
-            modules.sd_models.reload_model_weights(shared.sd_model, info)
+            modules.sd_models.unload_model_weights(shared.sd_model, self.info_base)
+            self.info_hr = modules.sd_models.get_closet_checkpoint_match(args[1])
+            modules.sd_models.reload_model_weights(shared.sd_model, self.info_hr)
+            p.override_settings['sd_model_checkpoint'] = self.info_hr.name
+            p.extra_generation_params['base model'] = self.info_base.name
 
 
