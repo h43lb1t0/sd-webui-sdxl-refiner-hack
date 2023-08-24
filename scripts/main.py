@@ -43,6 +43,7 @@ class sdxlRefinderHack(scripts.Script):
     
     def ui(self, is_img2img):
         with gr.Accordion(self.title(), open=False):
+            gr.Markdown("will become unnecessary in the 1.6 release of A1111")
             if is_img2img:
                 gr.Markdown("will not do anything in img2img")
             else:
